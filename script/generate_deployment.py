@@ -1,8 +1,10 @@
 import yaml
 
-def generate_deployment(namespace_file):
+def generate_deployment(namespace_file, output_file):
     with open(namespace_file, 'r') as file:
         namespaces = yaml.safe_load(file)
+
+    all_deployments = []
 
     for service, image in namespaces.items():
         deployment = {
@@ -36,10 +38,11 @@ def generate_deployment(namespace_file):
                 }
             }
         }
-        
-        with open(f'{service}_deployment.yaml', 'w') as deployment_file:
-            yaml.dump(deployment, deployment_file)
+        all_deployments.append(deployment)
+
+    with open(output_file, 'w') as output:
+        yaml.dump_all(all_deployments, output)
 
 if __name__ == "__main__":
-    generate_deployment('namespaces.yaml')
+    generate_deployment('namespaces.yaml', 'deployments.yaml')
 
