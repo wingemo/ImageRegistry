@@ -1,7 +1,6 @@
 import yaml
-import subprocess
 
-def generate_production_deployment(namespace_file, output_file):
+def generate_production_deployment(namespace_file, deployment_file, service_file, hpa_file):
     with open(namespace_file, 'r') as file:
         namespaces = yaml.safe_load(file)
 
@@ -10,6 +9,7 @@ def generate_production_deployment(namespace_file, output_file):
     all_hpas = []
 
     for service, image in namespaces.items():
+        # Generera Deployment-definition
         deployment = {
             'apiVersion': 'apps/v1',
             'kind': 'Deployment',
@@ -17,7 +17,7 @@ def generate_production_deployment(namespace_file, output_file):
                 'name': service
             },
             'spec': {
-                'replicas': 3,  # Tre replikor för produktion
+                'replicas': 3,  
                 'selector': {
                     'matchLabels': {
                         'app': service
@@ -36,7 +36,7 @@ def generate_production_deployment(namespace_file, output_file):
                             'ports': [{
                                 'containerPort': 8080
                             }],
-                            'livenessProbe': {  # Liveness probe för att övervaka tjänstens hälsa
+                            'livenessProbe': {  
                                 'httpGet': {
                                     'path': '/',
                                     'port': 8080
@@ -44,7 +44,7 @@ def generate_production_deployment(namespace_file, output_file):
                                 'initialDelaySeconds': 30,
                                 'periodSeconds': 10
                             },
-                            'readinessProbe': {  # Readiness probe för att avgöra om tjänsten är redo att ta emot trafik
+                            'readinessProbe': {  
                                 'httpGet': {
                                     'path': '/',
                                     'port': 8080
@@ -52,7 +52,7 @@ def generate_production_deployment(namespace_file, output_file):
                                 'initialDelaySeconds': 30,
                                 'periodSeconds': 10
                             },
-                            'resources': {  # Resursbegränsningar för att säkerställa stabil drift
+                            'resources': {  
                                 'limits': {
                                     'cpu': '0.5',
                                     'memory': '512Mi'
@@ -69,7 +69,7 @@ def generate_production_deployment(namespace_file, output_file):
         }
         all_deployments.append(deployment)
 
-        # Skapa Kubernetes-service-definition
+        # Generera Kubernetes-service-definition
         service_definition = {
             'apiVersion': 'v1',
             'kind': 'Service',
@@ -89,7 +89,7 @@ def generate_production_deployment(namespace_file, output_file):
         }
         all_services.append(service_definition)
 
-        # Skapa HPA-definition
+        # Generera HPA-definition
         hpa_definition = {
             'apiVersion': 'autoscaling/v2beta2',
             'kind': 'HorizontalPodAutoscaler',
@@ -116,18 +116,16 @@ def generate_production_deployment(namespace_file, output_file):
         all_hpas.append(hpa_definition)
 
     # Skriv alla deployments till en YAML-fil
-    with open(output_file, 'w') as output:
+    with open(deployment_file, 'w') as output:
         yaml.dump_all(all_deployments, output)
 
-    # Skapa alla Kubernetes-services med kubectl
-    for service_definition in all_services:
-        kubectl_command = ['kubectl', 'apply', '-f', '-']
-        subprocess.run(kubectl_command, input=yaml.dump(service_definition).encode('utf-8'))
+    # Skriv alla Kubernetes-services till en YAML-fil
+    with open(service_file, 'w') as output:
+        yaml.dump_all(all_services, output)
 
-    # Skapa alla HPAs med kubectl
-    for hpa_definition in all_hpas:
-        kubectl_command = ['kubectl', 'apply', '-f', '-']
-        subprocess.run(kubectl_command, input=yaml.dump(hpa_definition).encode('utf-8'))
+    # Skriv alla HPAs till en YAML-fil
+    with open(hpa_file, 'w') as output:
+        yaml.dump_all(all_hpas, output)
 
 if __name__ == "__main__":
-    generate_production_deployment('namespaces.yaml', 'deployments.yaml')
+    generate_production_deployment('namespaces.yaml', 'deployments.yaml', 'services.yaml', 'hpa.yaml')
