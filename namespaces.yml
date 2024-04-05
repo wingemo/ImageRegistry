@@ -1,5 +1,2 @@
-namespaces:
-  - name: "namespace1"
-    image: "image1"
-  - name: "namespace2"
-    image: "image2"
+microservice1: myregistry.com/microservice1:latest
+microservice2: myregistry.com/microservice2:latest
