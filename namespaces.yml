@@ -1,1 +1,5 @@
-
+namespaces:
+  - name: "namespace1"
+    image: "image1"
+  - name: "namespace2"
+    image: "image2"
